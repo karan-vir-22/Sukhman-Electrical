@@ -1,64 +1,129 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for, session
 
 app = Flask(__name__)
+app.secret_key = 'your_secret_key_here'
 
-food_menu = {
-    "Pizza": 120,
-    "Burger": 80,
-    "Pasta": 100,
-    "Sandwich": 60,
-    "Noodles": 90,
-    "Biryani": 150,
-    "Paneer Roll": 70,
-    "Fries": 50
+# Sample user storage (Replace with a database in production)
+users = {}
+
+# Sample data
+products = {
+    "Switch": 30,
+    "Socket": 40,
+    "LED" : 100,
+    "Holder": 25,
+    "Two Pin Plug": 15,
+    "Three Pin Plug": 20,
+    "MCB Switch": 150,
+    "Wires": 10,  # per meter
+    "Fitting Pipes": 20  # per meter
 }
 
-service_menu = {
-    "Cleaning": 300,
-    "Plumbing": 500,
-    "Electric Repair": 450,
-    "Painting": 800,
-    "Appliance Installation": 600,
-    "Furniture Assembly": 400
+services_available = {
+    "Home Electrical Installation": 500,
+    "Repair Service": 400,
+    "Wiring Repair": 500,
+    "AC Installation": 1500,
+    "Switch Board Fitting": 350
 }
 
-@app.route("/", methods=["GET", "POST"])
+# ---------------------- Routes ----------------------
+
 @app.route("/", methods=["GET", "POST"])
 def index():
-    query = request.args.get("q", "").lower()
-    ordered_items = []
-    total = 0
-    payment_method = None  # New line
+    if "user" not in session:
+        return redirect(url_for("signup"))  # Force users to sign up first!
 
-    filtered_food = {item: price for item, price in food_menu.items() if query in item.lower()}
-    filtered_services = {item: price for item, price in service_menu.items() if query in item.lower()}
+    query = request.args.get("q", "").lower()
+    filtered_products = {item: price for item, price in products.items() if query in item.lower()}
+    filtered_services = {item: price for item, price in services_available.items() if query in item.lower()}
 
     if request.method == "POST":
-        selected_food = request.form.getlist("food")
-        selected_services = request.form.getlist("service")
-        payment_method = request.form.get("payment_method")  # Get selected payment option
+        ordered_items = []
+        total = 0
+        payment_method = request.form.get("payment_method")
 
-        for item in selected_food:
-            if item in food_menu:
-                ordered_items.append((item, food_menu[item]))
-                total += food_menu[item]
+        # Products
+        for item in products:
+            qty = int(request.form.get(f"product_qty_{item}", 0))
+            if qty > 0:
+                price = products[item]
+                total += qty * price
+                ordered_items.append((item, qty, qty * price))
 
-        for item in selected_services:
-            if item in service_menu:
-                ordered_items.append((item, service_menu[item]))
-                total += service_menu[item]
+        # Services
+        for item in services_available:
+            qty = int(request.form.get(f"service_qty_{item}", 0))
+            if qty > 0:
+                price = services_available[item]
+                total += qty * price
+                ordered_items.append((item, qty, qty * price))
+
+        session['cart'] = ordered_items
+        session['total'] = total
+        session['payment_method'] = payment_method
 
     return render_template("index.html",
-                           food_menu=filtered_food,
-                           service_menu=filtered_services,
-                           ordered_items=ordered_items,
-                           total=total,
-                           query=query,
-                           payment_method=payment_method)
-
+                           products=filtered_products,
+                           services_available=filtered_services,
+                           username=session.get("user"),
+                           query=query)
 @app.route("/about")
 def about():
-    return render_template("about.html")
+    return render_template("about.html", username=session.get("user"))
+
+@app.route("/cart")
+def cart():
+    cart_items = session.get("cart", [])
+    total = sum(price for item, qty, price in cart_items)  # Fixed unpacking issue
+    return render_template("cart.html", cart_items=cart_items, total=total, username=session.get("user"))
+
+
+
+
+@app.route("/signup", methods=["GET", "POST"])
+def signup():
+    error = None
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+
+        if username in users:
+            error = "Username already exists. Please try a different one."
+        else:
+            users[username] = password
+            session["user"] = username
+            return redirect(url_for("index"))  # Redirect to homepage after signup
+
+    return render_template("signup.html", error=error)
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    error = None
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+
+        if username in users and users[username] == password:
+            session["user"] = username
+            return redirect(url_for("index"))
+        else:
+            error = "Account not found. Please sign up first."
+            return redirect(url_for("signup"))  # Redirect to signup if user isn't registered
+
+    return render_template("login.html", error=error)
+
+
+@app.route("/logout")
+def logout():
+    session.pop("user", None)
+    session.pop("cart", None)
+    session.pop("total", None)
+    session.pop("payment_method", None)
+    return redirect(url_for("signup"))  # Force users to go through signup again!
+
+# ---------------------- Main ----------------------
 
 if __name__ == "__main__":
     app.run(debug=True)
