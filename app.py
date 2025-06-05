@@ -73,6 +73,7 @@ def login():
     if request.method == "POST":
         username = request.form.get("username")
         password = request.form.get("password")
+        
 
         if username in users and users[username] == password:
             session["user"] = username
@@ -82,10 +83,7 @@ def login():
 
     return render_template("auth.html", error=error)
 
-@app.route("/logout")
-def logout():
-    session.clear()
-    return redirect(url_for("login"))
+
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
     signup_error = None
