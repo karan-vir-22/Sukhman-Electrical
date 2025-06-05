@@ -86,7 +86,6 @@ def login():
 def logout():
     session.clear()
     return redirect(url_for("login"))
-
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
     signup_error = None
@@ -109,6 +108,41 @@ def cart():
     total = session.get("total", 0)
     return render_template("cart.html", cart_items=cart_items, total=total, username=session.get("user"))
 
+@app.route('/add_to_cart', methods=['POST'])
+def add_to_cart():
+    item_name = request.form.get('item_name')
+    item_type = request.form.get('item_type')
+    quantity = int(request.form.get('quantity', 1))
+    action = request.form.get('action')  # 'add' or 'buy_now'
+
+    # Get price from correct dictionary
+    price = products.get(item_name) if item_type == 'product' else services_available.get(item_name)
+    total_price = quantity * price if price else 0
+
+    # Store the item in session
+    cart = session.get('cart', [])
+    cart.append({
+        'name': item_name,
+        'type': item_type,
+        'quantity': quantity,
+        'total_price': total_price
+    })
+    session['cart'] = cart
+
+    # Recalculate total
+    session['total'] = sum(item['total_price'] for item in cart)
+
+    # Redirect based on button clicked
+    if action == 'buy_now':
+        return redirect(url_for('cart'))
+    return redirect(url_for('index'))
+
+@app.route('/clear-cart', methods=['POST'])
+def clear_cart():
+    session.pop('cart', None)
+    session.pop('total', None)
+    return ('', 204)  # No content (for fetch to resolve without error)
+
 @app.route("/about")
 def about():
     return render_template("about.html", username=session.get("user"))
@@ -128,6 +162,31 @@ def refund_policy():
 @app.route("/contact")
 def contact():
     return render_template("contact.html")
+
+@app.route('/process-payment', methods=['POST'])
+def process_payment():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
+    name = request.form.get('name')
+    email = request.form.get('email')
+    address = request.form.get('address')
+    payment_method = request.form.get('paymentMethod')
+
+    cart_items = session.get('cart', [])
+    total = session.get('total', 0)
+
+    # Optional: Print the order in terminal
+    print(f"Order by {name} | ₹{total} | Payment: {payment_method}")
+    print("Items:", cart_items)
+
+    # Clear cart
+    session.pop('cart', None)
+    session.pop('total', None)
+
+    return render_template('order_confirmation.html', name=name, total=total)
+
+
 
 # ---------------------- Main ----------------------
 if __name__ == "__main__":

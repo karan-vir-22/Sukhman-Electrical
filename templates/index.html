@@ -1,113 +1,59 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>ElectroShop - Sukhman Electrical</title>
+    <title>Sukhman Electrical</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         body {
-            background: linear-gradient(to right, #f0f2f5, #ffffff);
+            background: linear-gradient(to right, #e7e5dc, #cfcdc5);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-
         .navbar-brand {
             font-weight: bold;
             font-size: 30px;
             letter-spacing: 1.2px;
         }
-
         .hero {
             position: relative;
-            height: 60vh;
+            height: 40vh;
             background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.6)), url('/static/images/hero.jpg') center/cover no-repeat;
             display: flex;
             align-items: center;
             justify-content: center;
-            text-align: center;
             color: #fff;
             border-radius: 12px;
             margin-bottom: 30px;
         }
-
         .hero-overlay {
             padding: 60px;
+            text-align: center;
         }
-
-        .hero h1 {
-            font-size: 3.2em;
-            font-weight: 800;
-            text-shadow: 2px 2px 6px rgba(0,0,0,0.6);
-        }
-
-        .hero p {
-            font-size: 1.4em;
-            margin-top: 15px;
-        }
-
         .section-title {
             margin-top: 50px;
             margin-bottom: 30px;
             font-size: 26px;
             font-weight: bold;
             color: #333;
-            border-left: 5px solid #007bff;
+            border-left: 5px solid #126438;
             padding-left: 15px;
         }
-
         .card {
             border: none;
             border-radius: 16px;
             overflow: hidden;
             box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transition: transform 0.3s ease;
         }
-
         .card:hover {
             transform: scale(1.03);
-            box-shadow: 0 12px 24px rgba(0,0,0,0.15);
         }
-
         .card img {
-            height: 200px;
+            height: 160px;
             object-fit: cover;
         }
-
-        .card-title {
-            font-size: 1.3rem;
-            font-weight: bold;
-            color: #007bff;
-        }
-
-        .card-text {
-            font-size: 1.1rem;
-            color: #444;
-        }
-
-        .form-control, input[type="number"] {
-            border-radius: 10px;
-        }
-
-        .btn-success {
-            background: linear-gradient(to right, #28a745, #218838);
-            font-weight: bold;
-            padding: 12px 28px;
-            border-radius: 10px;
-        }
-
-        .btn-success:hover {
-            background: linear-gradient(to right, #218838, #1e7e34);
-        }
-
-        .payment-methods label {
-            font-weight: 600;
-            margin-right: 20px;
-        }
-
-        ul.list-group li {
-            font-size: 1.05rem;
-        }
-
         footer {
             margin-top: 60px;
             background-color: #343a40;
@@ -115,10 +61,17 @@
             padding: 30px 0;
             text-align: center;
         }
-
         footer a {
             color: #ffc107;
-            text-decoration: none;
+        }
+        .btn-action {
+            width: 48%;
+        }
+        @media (max-width: 576px) {
+            .btn-action {
+                width: 100%;
+                margin-bottom: 5px;
+            }
         }
     </style>
 </head>
@@ -155,75 +108,60 @@
             </div>
         </section>
 
-        <form method="POST">
-            <h3 class="section-title">🔌 Products</h3>
-            <div class="row row-cols-1 row-cols-md-3 g-4">
-                {% for item, price in products.items() %}
-                <div class="col">
-                    <div class="card h-100">
-                        <img src="{{ url_for('static', filename='images/' + item.lower().replace(' ', '_') + '.jpg') }}" class="card-img-top" alt="{{ item }}">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ item }}</h5>
-                            <p class="card-text">₹{{ price }}</p>
-                            <label>Qty:</label>
-                            <input type="number" name="product_qty_{{ item }}" min="0" value="0" class="form-control">
-                        </div>
+        <h3 class="section-title">🔌 Products</h3>
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
+            {% for item, price in products.items() %}
+            <div class="col">
+                <div class="card h-100">
+                    <img src="{{ url_for('static', filename='images/' + item.lower().replace(' ', '_') + '.jpg') }}" class="card-img-top" alt="{{ item }}">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ item }}</h5>
+                        <p class="card-text">Price: ₹{{ price }}</p>
+                        <form method="POST" action="{{ url_for('add_to_cart') }}">
+                            <input type="hidden" name="item_name" value="{{ item }}">
+                            <input type="hidden" name="item_type" value="product">
+                            <input type="number" name="quantity" class="form-control mb-2" min="1" value="1">
+                            <div class="d-flex justify-content-between">
+                                <button type="submit" name="action" value="add" class="btn btn-outline-primary btn-sm btn-action">Add to Cart</button>
+                                <button type="submit" name="action" value="buy_now" class="btn btn-success btn-sm btn-action">Buy Now</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
-                {% endfor %}
             </div>
-
-            <h3 class="section-title">🔧 Services Available</h3>
-            <div class="row row-cols-1 row-cols-md-3 g-4">
-                {% for item, price in services_available.items() %}
-                <div class="col">
-                    <div class="card h-100">
-                        <img src="{{ url_for('static', filename='images/' + item.lower().replace(' ', '_') + '.jpg') }}" class="card-img-top" alt="{{ item }}">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ item }}</h5>
-                            <p class="card-text">₹{{ price }}</p>
-                            <label>Qty:</label>
-                            <input type="number" name="service_qty_{{ item }}" min="0" value="0" class="form-control">
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-
-            <h3 class="section-title">💳 Select Payment Method</h3>
-            <div class="payment-methods">
-                <label><input type="radio" name="payment_method" value="Card" required> Card</label><br>
-                <label><input type="radio" name="payment_method" value="UPI"> UPI</label><br>
-                <label><input type="radio" name="payment_method" value="Cash on Delivery"> Cash on Delivery</label>
-            </div>
-
-            <div class="mt-4">
-                <button class="btn btn-success">Place Order</button>
-            </div>
-        </form>
-
-        {% if ordered_items %}
-        <h3 class="section-title">🧾 Order Summary</h3>
-        <ul class="list-group">
-            {% for item, price in ordered_items %}
-            <li class="list-group-item d-flex justify-content-between">
-                {{ item }} <span>₹{{ price }}</span>
-            </li>
             {% endfor %}
-            <li class="list-group-item d-flex justify-content-between fw-bold">
-                Total <span>₹{{ total }}</span>
-            </li>
-        </ul>
-        {% endif %}
+        </div>
 
-        {% if payment_method %}
-        <h4 class="mt-4">Payment Method: <span class="text-success">{{ payment_method }}</span></h4>
-        {% endif %}
+        <h3 class="section-title">🔧 Services Available</h3>
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
+            {% for item, price in services_available.items() %}
+            <div class="col">
+                <div class="card h-100">
+                    <img src="{{ url_for('static', filename='images/' + item.lower().replace(' ', '_') + '.jpg') }}" class="card-img-top" alt="{{ item }}">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ item }}</h5>
+                        <p class="card-text">Price: ₹{{ price }}</p>
+                        <form method="POST" action="{{ url_for('add_to_cart') }}">
+                            <input type="hidden" name="item_name" value="{{ item }}">
+                            <input type="hidden" name="item_type" value="service">
+                            <input type="number" name="quantity" class="form-control mb-2" min="1" value="1">
+                            <div class="d-flex justify-content-between">
+                                <button type="submit" name="action" value="add" class="btn btn-outline-primary btn-sm btn-action">Add to Cart</button>
+                                <button type="submit" name="action" value="buy_now" class="btn btn-success btn-sm btn-action">Buy Now</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
     </div>
 
     <footer>
         <p>&copy; 2025 Sukhman Electrical | Built with ❤️ in Machhiwara Sahib</p>
         <p><a href="mailto:support@sukhmanelectrical.com">Contact Us</a> | <a href="/privacy">Privacy Policy</a></p>
     </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
